@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Greenlight — prototype</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #f6f8f7;
+    --panel: #ffffff;
+    --ink: #1c2420;
+    --ink-soft: #57635c;
+    --ink-faint: #8a958f;
+    --line: #e2e7e4;
+    --accent: #177a4c;
+    --accent-soft: #e9f4ee;
+    --amber: #9a6700;
+    --amber-soft: #fcf3e0;
+    --red: #b3392f;
+    --red-soft: #fbeceb;
+    --code-bg: #f2f4f3;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--ink);
+    font-size: 15px; line-height: 1.55;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, pre { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 13px; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+
+  .layout { display: flex; min-height: 100vh; }
+
+  /* ---------- sidebar ---------- */
+  .sidebar {
+    width: 216px; flex-shrink: 0; background: var(--panel);
+    border-right: 1px solid var(--line); padding: 20px 14px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .logo {
+    font-weight: 700; font-size: 17px; letter-spacing: -0.2px;
+    padding: 4px 10px 18px; display: flex; align-items: center; gap: 8px;
+  }
+  .logo .dot {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+  }
+  .nav-item {
+    display: block; width: 100%; text-align: left;
+    padding: 8px 10px; border: 0; border-radius: 7px;
+    background: none; font: inherit; color: var(--ink-soft); cursor: pointer;
+  }
+  .nav-item:hover { background: var(--bg); color: var(--ink); }
+  .nav-item.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .sidebar .spacer { flex: 1; }
+  .sidebar .me { padding: 10px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-faint); }
+
+  /* ---------- main ---------- */
+  .main { flex: 1; padding: 36px 48px 90px; max-width: 880px; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+  h1 { font-size: 22px; letter-spacing: -0.3px; margin-bottom: 6px; }
+  .sub { color: var(--ink-soft); margin-bottom: 26px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 20px 22px; margin-bottom: 16px;
+  }
+  .card h2 {
+    font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--ink-faint); margin-bottom: 12px; font-weight: 600;
+  }
+  .backlink { font-size: 13.5px; margin-bottom: 20px; display: inline-block; cursor: pointer; }
+  .muted { color: var(--ink-faint); font-size: 13.5px; }
+
+  .badge {
+    display: inline-block; font-size: 12px; font-weight: 700;
+    padding: 2px 10px; border-radius: 999px; vertical-align: 1px;
+  }
+  .badge.green { background: var(--accent-soft); color: var(--accent); }
+  .badge.amber { background: var(--amber-soft); color: var(--amber); }
+  .badge.red   { background: var(--red-soft); color: var(--red); }
+  .badge.plain { background: var(--code-bg); color: var(--ink-soft); }
+
+  .rowlist { width: 100%; border-collapse: collapse; }
+  .rowlist td { padding: 11px 4px; border-top: 1px solid var(--line); vertical-align: top; }
+  .rowlist tr:first-child td { border-top: 0; }
+  .pr-row { cursor: pointer; }
+  .pr-row:hover td { background: var(--accent-soft); }
+
+  /* ---------- verdict banner ---------- */
+  .verdict {
+    border-radius: 10px; padding: 16px 18px; margin-bottom: 16px;
+    border: 1px solid; font-size: 15px;
+  }
+  .verdict.green { background: var(--accent-soft); border-color: #c4e2d2; }
+  .verdict.amber { background: var(--amber-soft); border-color: #f0dfb2; }
+  .verdict.red   { background: var(--red-soft);  border-color: #f0c8c4; }
+  .verdict .lane { font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 6px; }
+  .verdict.green .lane { color: var(--accent); }
+  .verdict.amber .lane { color: var(--amber); }
+  .verdict.red .lane   { color: var(--red); }
+
+  .cite {
+    font-size: 12px; font-weight: 600; color: var(--accent);
+    background: var(--accent-soft); border-radius: 5px;
+    padding: 1px 7px; margin-left: 3px; white-space: nowrap; cursor: pointer;
+  }
+
+  pre.diff {
+    background: var(--code-bg); border: 1px solid var(--line);
+    border-radius: 8px; padding: 12px 14px; overflow-x: auto;
+    line-height: 1.6; margin: 10px 0;
+  }
+  .diff .add { color: var(--accent); }
+  .diff .del { color: var(--red); }
+  .diff .ctx { color: var(--ink-faint); }
+
+  .checks li { list-style: none; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; display: flex; gap: 10px; align-items: baseline; }
+  .checks li:first-child { border-top: 0; }
+  .checks .tick { color: var(--accent); font-weight: 700; flex-shrink: 0; }
+  .checks .cross { color: var(--red); font-weight: 700; flex-shrink: 0; }
+  .checks .dash { color: var(--amber); font-weight: 700; flex-shrink: 0; }
+
+  .btn {
+    font: inherit; font-weight: 600; cursor: pointer;
+    padding: 10px 18px; border-radius: 8px; border: 1px solid transparent;
+    background: var(--accent); color: #fff;
+  }
+  .btn:hover { background: #116340; }
+  .btn.ghost { background: var(--panel); color: var(--ink); border-color: var(--line); font-weight: 500; }
+  .btn.ghost:hover { background: var(--bg); }
+  .btn.small { padding: 6px 12px; font-size: 13px; }
+  .btnrow { display: flex; align-items: center; gap: 10px; margin-top: 18px; }
+  .btnrow .label { color: var(--ink-faint); font-size: 13.5px; }
+
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; font-weight: 600; color: var(--ink-soft); margin-bottom: 6px; }
+  .field .value { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 13px; font-size: 14px; }
+
+  .stat-line { display: flex; justify-content: space-between; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .stat-line:first-of-type { border-top: 0; }
+
+  .confirm-banner {
+    background: var(--accent-soft); border: 1px solid #c4e2d2;
+    border-radius: 9px; padding: 14px 16px; margin-bottom: 20px; font-size: 14px;
+  }
+  .confirm-banner strong { color: var(--accent); }
+
+  .hintbar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--ink); color: #ccd6d0;
+    font-size: 12.5px; padding: 8px 16px; text-align: center;
+  }
+  .hintbar b { color: #fff; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <nav class="sidebar">
+    <div class="logo"><span class="dot">G</span> Greenlight</div>
+    <button class="nav-item" data-nav="queue" onclick="go('queue')">Review queue</button>
+    <button class="nav-item" data-nav="policies" onclick="go('policies')">Policies</button>
+    <button class="nav-item" data-nav="exceptions" onclick="go('exceptions')">Exceptions</button>
+    <div class="spacer"></div>
+    <div class="me">signed in as<br><b style="color:var(--ink-soft)">sam@company.dev</b><br><span style="font-size:12px">platform reviewer</span></div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ================= QUEUE ================= -->
+    <section class="screen active" id="screen-queue">
+      <h1>Infra changes this week</h1>
+      <p class="sub">Every Terraform PR gets a verdict when its plan lands. You only need to think hard about the amber ones.</p>
+
+      <div class="card">
+        <h2>Needs your judgment · 1</h2>
+        <table class="rowlist">
+          <tr class="pr-row" onclick="go('verdict-yellow')">
+            <td><b>#482 · widen ingress for partner webhook receiver</b><br>
+              <span class="muted">checkout-infra · maya.o · plan touches 1 security group</span></td>
+            <td style="text-align:right"><span class="badge amber">needs a human</span></td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Cleared · 2</h2>
+        <table class="rowlist">
+          <tr class="pr-row" onclick="go('verdict-green')">
+            <td><b>#485 · add dead-letter queue for order events</b><br>
+              <span class="muted">orders-infra · jchen · matched pattern: new SQS queue + consumer role</span></td>
+            <td style="text-align:right"><span class="badge green">cleared</span></td>
+          </tr>
+          <tr class="pr-row" onclick="go('verdict-green')">
+            <td><b>#480 · bump search-indexer replica count 3 → 5</b><br>
+              <span class="muted">discovery-infra · priya · matched pattern: replica scaling within limits</span></td>
+            <td style="text-align:right"><span class="badge green">cleared</span></td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Blocked · 1</h2>
+        <table class="rowlist">
+          <tr class="pr-row" onclick="go('verdict-red')">
+            <td><b>#484 · host launch assets from a public bucket</b><br>
+              <span class="muted">marketing-infra · dev.t · trips policy: no public object storage</span></td>
+            <td style="text-align:right"><span class="badge red">blocked</span></td>
+          </tr>
+        </table>
+      </div>
+
+      <p class="muted">Lane split, last 30 days: 71% cleared · 19% needs a human · 10% blocked. Median open→merge: 4.1h (was 2.3 days before the pilot).</p>
+    </section>
+
+    <!-- ================= GREEN VERDICT ================= -->
+    <section class="screen" id="screen-verdict-green">
+      <a class="backlink" onclick="go('queue')">← back to queue</a>
+      <h1>#485 · add dead-letter queue for order events</h1>
+      <p class="sub">orders-infra · opened 22 min ago by jchen · plan: 2 to add, 0 to change, 0 to destroy</p>
+
+      <div class="verdict green">
+        <span class="lane">Cleared</span>
+        This plan adds one SQS queue (<code>order-events-dlq</code>) and one consumer IAM role scoped to that queue's ARN. It matches the allowlisted pattern <b>“new SQS queue + scoped consumer role”</b> exactly — no public exposure, no wildcard permissions, no stateful resources touched. Ten-second check: the two resources below are the whole diff.
+      </div>
+
+      <div class="card">
+        <h2>What the plan does</h2>
+        <pre class="diff"><span class="add">+ aws_sqs_queue.order_events_dlq</span>
+<span class="ctx">    message_retention_seconds = 1209600</span>
+<span class="ctx">    kms_master_key_id         = alias/orders   ✓ encrypted</span>
+<span class="add">+ aws_iam_role.dlq_consumer</span>
+<span class="ctx">    actions   = ["sqs:ReceiveMessage", "sqs:DeleteMessage"]</span>
+<span class="ctx">    resources = [aws_sqs_queue.order_events_dlq.arn]   ✓ scoped, no wildcards</span></pre>
+      </div>
+
+      <div class="card">
+        <h2>Policies checked · 4 of 4 pass</h2>
+        <ul class="checks">
+          <li><span class="tick">✓</span><span><a onclick="go('policy')">No public object storage or queues</a> — queue is not exposed</span></li>
+          <li><span class="tick">✓</span><span>IAM roles must scope to explicit ARNs — matches, no wildcards</span></li>
+          <li><span class="tick">✓</span><span>Data stores encrypt at rest — KMS key present</span></li>
+          <li><span class="tick">✓</span><span>Required tags present — <code>team</code>, <code>cost-center</code>, <code>service</code></span></li>
+        </ul>
+      </div>
+
+      <div class="btnrow">
+        <button class="btn" onclick="thank(this)">Looks right — approve</button>
+        <button class="btn ghost" onclick="go('verdict-yellow')">Disagree — send to judgment queue</button>
+        <span class="label" id="approved-note" style="display:none; color:var(--accent); font-weight:600">Approved. This verdict enters this week's audit pool.</span>
+      </div>
+    </section>
+
+    <!-- ================= YELLOW VERDICT ================= -->
+    <section class="screen" id="screen-verdict-yellow">
+      <a class="backlink" onclick="go('queue')">← back to queue</a>
+      <h1>#482 · widen ingress for partner webhook receiver</h1>
+      <p class="sub">checkout-infra · opened 3h ago by maya.o · plan: 0 to add, 1 to change, 0 to destroy</p>
+
+      <div class="verdict amber">
+        <span class="lane">Needs a human — routed to you (networking owner)</span>
+        This widens ingress on <code>sg-webhook-recv</code> from a partner /28 to <code>0.0.0.0/0</code> on port 443. That's not forbidden — the PR says the partner is moving to rotating egress IPs and the receiver validates HMAC signatures — but "public ingress with app-layer auth" is a judgment call I'm not allowed to make. Here's everything I'd want in front of me if I were you.
+      </div>
+
+      <div class="card">
+        <h2>The change</h2>
+        <pre class="diff"><span class="ctx">  aws_security_group_rule.webhook_ingress</span>
+<span class="del">-   cidr_blocks = ["203.0.113.0/28"]   # partner NAT range</span>
+<span class="add">+   cidr_blocks = ["0.0.0.0/0"]        # partner moving to rotating IPs</span>
+<span class="ctx">    port        = 443, protocol = tcp</span></pre>
+      </div>
+
+      <div class="card">
+        <h2>Why I couldn't decide</h2>
+        <ul class="checks">
+          <li><span class="dash">•</span><span>Opening to the world is <b>not</b> a hard-block when the port is 443 and the service authenticates requests — policy leaves this to a human on purpose.<span class="cite" onclick="go('policy')">policy: public ingress</span></span></li>
+          <li><span class="dash">•</span><span>The HMAC-validation claim is in the PR description, not verifiable from the plan.</span></li>
+          <li><span class="dash">•</span><span>The receiver sits in the checkout VPC — blast radius is higher than a typical webhook endpoint.</span></li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>How similar changes were decided</h2>
+        <ul class="checks">
+          <li><span class="tick">✓</span><span><b>#391</b> (Jan) — same ask for the returns webhook. Approved <i>with</i> a WAF rate limit added first. Decision note: "public 443 fine if WAF-fronted."</span></li>
+          <li><span class="cross">✗</span><span><b>#356</b> (Nov) — public ingress to an internal admin tool. Rejected; moved behind the VPN instead.</span></li>
+        </ul>
+        <p class="muted" style="margin-top:10px">One more approval matching #391's shape and I'll draft a "public webhook ingress requires WAF" policy for the platform team to review.</p>
+      </div>
+
+      <div class="btnrow">
+        <button class="btn" onclick="go('queue')">Approve with conditions…</button>
+        <button class="btn ghost" onclick="go('queue')">Reject with reason…</button>
+        <span class="label">Your decision and rationale get recorded as a precedent.</span>
+      </div>
+    </section>
+
+    <!-- ================= RED VERDICT ================= -->
+    <section class="screen" id="screen-verdict-red">
+      <a class="backlink" onclick="go('queue')">← back to queue</a>
+      <h1>#484 · host launch assets from a public bucket</h1>
+      <p class="sub">marketing-infra · opened 1h ago by dev.t · plan: 1 to add, 1 to change, 0 to destroy</p>
+
+      <div class="verdict red">
+        <span class="lane">Blocked</span>
+        This plan makes <code>launch-assets</code> publicly readable. Public buckets are a hard block — not because of this bucket's contents today, but because public buckets outlive their contents; ours have a history of quietly accumulating things that were never meant to be world-readable.<span class="cite" onclick="go('policy')">policy: no public object storage</span> The compliant version of what you're doing is below, and it's about four lines different.
+      </div>
+
+      <div class="card">
+        <h2>What tripped it</h2>
+        <pre class="diff"><span class="ctx">  aws_s3_bucket_public_access_block.launch_assets</span>
+<span class="del">-   block_public_acls   = true</span>
+<span class="add">+   block_public_acls   = false</span>
+<span class="del">-   block_public_policy = true</span>
+<span class="add">+   block_public_policy = false</span></pre>
+      </div>
+
+      <div class="card">
+        <h2>Suggested fix — same outcome, compliant</h2>
+        <p style="font-size:14px; margin-bottom:8px">Keep the bucket private and serve it through the existing CDN with origin access control. Public URL for users, no public bucket:</p>
+        <pre class="diff"><span class="ctx">  # bucket stays fully private (revert the access-block changes)</span>
+<span class="add">+ aws_cloudfront_distribution.launch_assets</span>
+<span class="add">+   origin { origin_access_control_id = aws_cloudfront_origin_access_control.launch.id }</span>
+<span class="add">+ aws_s3_bucket_policy.launch_assets   # allow read from the distribution only</span></pre>
+        <p class="muted">This is the pattern the last three teams with the same need used (marketing-q1, hiring-site, docs-static).</p>
+      </div>
+
+      <div class="btnrow">
+        <button class="btn" onclick="go('queue')">Apply suggested fix to PR</button>
+        <button class="btn ghost" onclick="go('exception')">Request an exception</button>
+        <button class="btn ghost small" onclick="go('queue')">This block is wrong — flag it</button>
+      </div>
+    </section>
+
+    <!-- ================= POLICY DETAIL ================= -->
+    <section class="screen" id="screen-policy">
+      <a class="backlink" onclick="go('policies')">← all policies</a>
+      <h1>No public object storage <span class="badge red" style="vertical-align:4px">hard block</span></h1>
+      <p class="sub">POL-007 · v3 · owned by Platform Security · last edited May 2026</p>
+
+      <div class="card">
+        <h2>The rule</h2>
+        <p>S3 buckets (and equivalent object stores) are never publicly readable or writable, in any environment. Public distribution of static content goes through a CDN with origin access control, so the bucket itself stays private.</p>
+      </div>
+
+      <div class="card">
+        <h2>Why it exists</h2>
+        <p style="font-size:14.5px">Public buckets tend to outlive whatever they were created for. The 2024 incident (postmortem PM-112) started as a "temporary" public bucket for a campaign that later accumulated internal exports. The CDN pattern costs ~20 minutes more at setup and removes the whole failure class. This rule is a hard block rather than a judgment call because the compliant alternative is always available — there is no scenario where public-bucket is the only way.</p>
+      </div>
+
+      <div class="card">
+        <h2>Enforcement record · last 90 days</h2>
+        <div class="stat-line"><span>Times fired</span><b>9</b></div>
+        <div class="stat-line"><span>Suggested fix applied</span><b>7</b></div>
+        <div class="stat-line"><span>Exceptions granted</span><b>1 (expired &amp; cleaned up)</b></div>
+        <div class="stat-line"><span>"Block was wrong" flags</span><b>1 — reviewed, verdict upheld</b></div>
+      </div>
+      <p class="muted">A hard-block policy that was mostly overridden would be flagged here for revision. This one is earning its keep.</p>
+    </section>
+
+    <!-- ================= POLICIES LIST ================= -->
+    <section class="screen" id="screen-policies">
+      <h1>Policies</h1>
+      <p class="sub">Written in plain language, enforced from the written text, stats attached. 11 active — 8 written by the platform team, 3 drafted from judgment-queue precedents.</p>
+
+      <div class="card">
+        <table class="rowlist">
+          <tr class="pr-row" onclick="go('policy')">
+            <td><b>No public object storage</b><br><span class="muted">POL-007 · fired 9× / 90d · fix applied 7×</span></td>
+            <td style="text-align:right"><span class="badge red">hard block</span></td>
+          </tr>
+          <tr class="pr-row" onclick="go('policy')">
+            <td><b>IAM roles scope to explicit ARNs in prod</b><br><span class="muted">POL-003 · fired 14× / 90d · fix applied 13×</span></td>
+            <td style="text-align:right"><span class="badge red">hard block</span></td>
+          </tr>
+          <tr class="pr-row" onclick="go('policy')">
+            <td><b>Public ingress requires app-layer auth review</b><br><span class="muted">POL-011 · routed 6× / 90d · drafted from precedents #391, #402</span></td>
+            <td style="text-align:right"><span class="badge amber">judgment</span></td>
+          </tr>
+          <tr class="pr-row" onclick="go('policy')">
+            <td><b>Stateful resource deletion needs a migration note</b><br><span class="muted">POL-005 · fired 3× / 90d · fix applied 3×</span></td>
+            <td style="text-align:right"><span class="badge red">hard block</span></td>
+          </tr>
+        </table>
+      </div>
+      <p class="muted">The amber badge means the policy deliberately routes to a human instead of deciding — some rules exist to get the right person looking, not to make the call.</p>
+    </section>
+
+    <!-- ================= EXCEPTION REQUEST ================= -->
+    <section class="screen" id="screen-exception">
+      <a class="backlink" onclick="go('verdict-red')">← back to the verdict</a>
+      <h1>Request an exception</h1>
+      <p class="sub">Exceptions are logged, owned, and they expire. There is no permanent exception — that's just an unwritten policy change.</p>
+
+      <div class="card">
+        <div class="field">
+          <label>Policy</label>
+          <div class="value">POL-007 · No public object storage <span class="badge red">hard block</span></div>
+        </div>
+        <div class="field">
+          <label>Change</label>
+          <div class="value">#484 · host launch assets from a public bucket · marketing-infra</div>
+        </div>
+        <div class="field">
+          <label>Your justification (required)</label>
+          <div class="value" style="color:var(--ink-faint)">Why the suggested CDN pattern doesn't work for this case…</div>
+        </div>
+        <div class="field">
+          <label>Expires</label>
+          <div class="value">30 days — <b>Aug 15, 2026</b> · on expiry, an issue reopens on marketing-infra to remove or renew</div>
+        </div>
+        <div class="field">
+          <label>Approver</label>
+          <div class="value">Platform Security (POL-007 owner) · typical response ~4h</div>
+        </div>
+        <div class="btnrow" style="margin-top:4px">
+          <button class="btn" onclick="go('exceptions')">Send request</button>
+          <button class="btn ghost" onclick="go('verdict-red')">Never mind — I'll use the CDN pattern</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= EXCEPTIONS LIST ================= -->
+    <section class="screen" id="screen-exceptions">
+      <h1>Exceptions</h1>
+      <p class="sub">Every live deviation from written policy, with an owner and a clock on it.</p>
+
+      <div class="confirm-banner">
+        <strong>Requested.</strong> Platform Security has your exception request for #484 with your justification and the verdict attached.
+      </div>
+
+      <div class="card">
+        <h2>Open</h2>
+        <table class="rowlist">
+          <tr>
+            <td><b>POL-007 · launch-assets public bucket</b><br><span class="muted">#484 · marketing-infra · requested just now</span></td>
+            <td style="text-align:right"><span class="badge amber">pending approval</span></td>
+          </tr>
+          <tr>
+            <td><b>POL-003 · temporary wildcard for the billing migration</b><br><span class="muted">granted by Platform Security · expires Jul 29 (13 days)</span></td>
+            <td style="text-align:right"><span class="badge plain">expires in 13d</span></td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Recently expired</h2>
+        <table class="rowlist">
+          <tr>
+            <td><b>POL-007 · beta-signup public bucket</b><br><span class="muted">expired Jun 30 → issue reopened → bucket moved behind CDN Jul 3</span></td>
+            <td style="text-align:right"><span class="badge green">cleaned up</span></td>
+          </tr>
+        </table>
+      </div>
+      <p class="muted">Exceptions past expiry would show here in red with the reopened issue linked. Right now there are none.</p>
+    </section>
+
+  </main>
+</div>
+
+<div class="hintbar">
+  <b>Prototype.</b> Start in the review queue and open all three verdicts — the amber one ("needs a human") is the one worth the closest look. Policy citations and the exception path are clickable too.
+</div>
+
+<script>
+  function go(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + name).classList.add('active');
+
+    var navKey = 'queue';
+    if (name === 'policies' || name === 'policy') navKey = 'policies';
+    if (name === 'exceptions' || name === 'exception') navKey = 'exceptions';
+    document.querySelectorAll('.nav-item').forEach(n =>
+      n.classList.toggle('active', n.dataset.nav === navKey));
+
+    window.scrollTo(0, 0);
+  }
+
+  function thank(btn) {
+    document.getElementById('approved-note').style.display = 'inline';
+    btn.disabled = true;
+  }
+</script>
+</body>
+</html>
