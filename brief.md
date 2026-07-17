@@ -136,7 +136,7 @@ No expiry, no exception.
 ## Day-one metrics
 
 Instrumented before the pilot, with a baseline from historical PRs
-(backlog issue #1).
+([issue #1](https://github.com/KumarappanA/greenlight/issues/1)).
 
 **The headline numbers**
 
@@ -223,12 +223,12 @@ One platform team's review domain, two to four Terraform repos with real
 change volume (~40+ infra PRs a month between them), eight weeks. Phase
 zero is silent: Greenlight runs on every PR but posts nothing, and its
 verdicts are compared against what human reviewers actually did — that's
-the eval that decides whether it goes visible at all (backlog #7–8). Then
+the eval that decides whether it goes visible at all ([issue #7](https://github.com/KumarappanA/greenlight/issues/7) and [#8](https://github.com/KumarappanA/greenlight/issues/8)). Then
 comment-only (verdicts visible, changing nothing about required
 approvals), then the green lane, then — only if the audits are clean — a
 conversation about reduced human approval on green. Each gate has a number
-attached, and the last issue in the backlog is a written go/narrow/kill
-memo, same as every pilot I'd run.
+attached, and the last issue is a written readout deciding whether to
+expand, narrow, or kill it, same as every pilot I'd run.
 
 ## Open questions I'd want to argue about
 
