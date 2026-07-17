@@ -40,6 +40,15 @@ that actually need judgment.
    first is measurement, the agent is graded against historical PRs before
    it touches a live one, and the last is an explicit go/no-go decision.
 
+## Milestones
+
+| Milestone | What it covers |
+|---|---|
+| [Baseline](https://github.com/KumarappanA/greenlight/milestone/1) | Numbers on today's process before we build anything: PR volume, review time, what current checks catch. |
+| [Policy docs](https://github.com/KumarappanA/greenlight/milestone/2) | Get today's checks and the stuff that only lives in people's heads into policy docs people can read. |
+| [Shadow mode](https://github.com/KumarappanA/greenlight/milestone/3) | Runs on real PRs and posts nothing. Compare its verdicts to what reviewers actually decided. |
+| [Pilot](https://github.com/KumarappanA/greenlight/milestone/4) | Comment-only first, then the green lane, then a decision on whether to keep it. |
+
 ## A few honest notes
 
 - The Terraform snippets and policies in the prototype are invented but
