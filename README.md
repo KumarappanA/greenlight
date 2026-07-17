@@ -11,7 +11,7 @@ one, and how a team would sequence the work.
 |---|---|
 | `brief.md` | The product brief. The problem, where I'd start, the three-lane review model, risks, and day-one metrics. |
 | `prototype/index.html` | A click-through HTML prototype. Open it in a browser. |
-| `backlog.md` | The GitHub issues I'd file, in order, with acceptance criteria and dependencies. |
+| [Issues](https://github.com/KumarappanA/greenlight/issues) | The backlog — 15 issues across 4 milestones, each with a why, what, and done-when. |
 
 ## The idea in one paragraph
 
@@ -36,9 +36,9 @@ that actually need judgment.
    all three verdicts. The yellow one ("needs a human") is the screen I'd
    argue matters most — it shows what the agent does when it shouldn't
    decide on its own.
-3. Skim `backlog.md`. The first issue is measurement, the agent is graded
-   against historical PRs before it touches a live one, and the last issue
-   is an explicit go/no-go decision.
+3. Skim the [issues](https://github.com/KumarappanA/greenlight/issues). The
+   first is measurement, the agent is graded against historical PRs before
+   it touches a live one, and the last is an explicit go/no-go decision.
 
 ## A few honest notes
 
@@ -47,6 +47,6 @@ that actually need judgment.
 - The agent never gets merge rights in v1. It clears, blocks, or routes —
   a human's approval is still what GitHub requires. The brief explains why
   I'd hold that line even though auto-merge is the obvious ask.
-- The package ends with a kill-switch issue on purpose. If the audit finds
-  false greens, the auto-clear lane gets turned off, and the backlog says
-  exactly that.
+- The backlog ends with a kill-switch issue on purpose. If the audit finds
+  false greens, the auto-clear lane gets turned off — that's issue #11,
+  wired in before the green lane ever goes live.
